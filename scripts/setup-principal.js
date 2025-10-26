@@ -32,11 +32,11 @@ async function createPrincipalUser() {
 
     // Principal user data
     const principalData = {
-      firstName: 'Admin',
+      firstName: 'Taha',
       lastName: 'Principal',
-      email: 'admin@madrasah.edu',
-      phone: '+1234567890',
-      password: 'admin123', // Change this to a secure password
+      email: 'taha@gmail.com',
+      phone: '01729310335',
+      password: 'password',
       role: 'principal',
       isActive: true
     };
@@ -54,7 +54,7 @@ async function createPrincipalUser() {
     console.log('🎉 Principal user created successfully!');
     console.log('📧 Login credentials:');
     console.log(`   Email: ${principalData.email}`);
-    console.log(`   Password: admin123`);
+    console.log(`   Password: password`);
     console.log('');
     console.log('⚠️  IMPORTANT: Please change the password after first login!');
     console.log('🔒 For security, consider updating the password in this script before running.');
