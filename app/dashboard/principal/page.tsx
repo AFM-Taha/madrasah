@@ -9,12 +9,6 @@ import {
   Card,
   CardContent,
   Button,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Menu,
-  MenuItem,
-  Avatar,
   Chip,
   Paper,
   Table,
@@ -29,8 +23,6 @@ import {
   Fab,
 } from '@mui/material';
 import {
-  AccountCircle,
-  Logout,
   People,
   School,
   PersonAdd,
@@ -61,54 +53,45 @@ interface UsersResponse {
   };
 }
 
+interface Stats {
+  totalTeachers: number;
+  totalStudents: number;
+  totalUsers: number;
+}
+
 export default function PrincipalDashboard() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalUsers, setTotalUsers] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [stats, setStats] = useState({
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [stats, setStats] = useState<Stats>({
     totalTeachers: 0,
     totalStudents: 0,
     totalUsers: 0,
   });
 
-  // Redirect if not authenticated or not principal
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'principal') {
-      router.push('/login');
-    }
-  }, [isAuthenticated, user, router]);
-
   // Fetch users and stats
-  useEffect(() => {
-    fetchUsers();
-    fetchStats();
-  }, [page, rowsPerPage, searchTerm]);
-
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const params = new URLSearchParams({
+      setLoading(true);
+      const queryParams = new URLSearchParams({
         page: (page + 1).toString(),
         limit: rowsPerPage.toString(),
-        ...(searchTerm && { search: searchTerm }),
+        search: searchTerm,
       });
 
-      const response = await fetch(`/api/users?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
+      const response = await fetch(`/api/users?${queryParams}`);
       if (response.ok) {
         const data: UsersResponse = await response.json();
         setUsers(data.users);
         setTotalUsers(data.pagination.total);
+      } else {
+        console.error('Failed to fetch users');
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -116,6 +99,20 @@ export default function PrincipalDashboard() {
       setLoading(false);
     }
   };
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Fetch data on component mount and when dependencies change
+  useEffect(() => {
+    fetchUsers();
+  }, [page, rowsPerPage, searchTerm]);
 
   const fetchStats = async () => {
     try {
@@ -159,15 +156,6 @@ export default function PrincipalDashboard() {
     router.push('/login');
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'teacher':
@@ -184,128 +172,112 @@ export default function PrincipalDashboard() {
   }
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      {/* App Bar */}
-      <AppBar position="static">
-        <Toolbar>
-          <School sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Madrasah Management - Principal Dashboard
-          </Typography>
-          <IconButton
-            size="large"
-            edge="end"
-            aria-label="account of current user"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
-            onClick={handleMenuOpen}
-            color="inherit"
-          >
-            <AccountCircle />
-          </IconButton>
-          <Menu
-            id="menu-appbar"
-            anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleMenuClose}>
-              <Avatar sx={{ mr: 2, width: 24, height: 24 }} />
-              {user.fullName}
-            </MenuItem>
-            <MenuItem onClick={handleLogout}>
-              <Logout sx={{ mr: 2 }} />
-              Logout
-            </MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
-
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        {/* Welcome Section */}
-        <Typography variant="h4" gutterBottom>
-          Welcome, {user.firstName}!
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
+          Principal Dashboard
         </Typography>
-        <Typography variant="body1" color="text.secondary" gutterBottom>
-          Manage your madrasah efficiently with comprehensive tools.
+        <Typography variant="body1" color="text.secondary">
+          Welcome back, {user?.firstName}! Manage your madrasah efficiently.
         </Typography>
+      </Box>
 
-        {/* Stats Cards */}
-        <Box sx={{ 
-          display: 'flex', 
-          flexWrap: 'wrap', 
-          gap: 3, 
-          mb: 4,
-          '& > *': { 
-            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.333% - 16px)' },
-            minWidth: { xs: '100%', sm: '280px', md: '200px' }
-          }
-        }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <People sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-                <Box>
-                  <Typography variant="h4">{stats.totalTeachers}</Typography>
-                  <Typography color="text.secondary">Teachers</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <School sx={{ fontSize: 40, color: 'secondary.main', mr: 2 }} />
-                <Box>
-                  <Typography variant="h4">{stats.totalStudents}</Typography>
-                  <Typography color="text.secondary">Students</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <PersonAdd sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
-                <Box>
-                  <Typography variant="h4">{stats.totalUsers}</Typography>
-                  <Typography color="text.secondary">Total Users</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Box>
-
-        {/* Users Management Section */}
-        <Card>
+      {/* Stats Cards */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: 3, 
+        mb: 4 
+      }}>
+        <Card sx={{ minWidth: 200, flex: '1 1 300px' }}>
           <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h5">User Management</Typography>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => router.push('/dashboard/principal/users/create')}
-              >
-                Add User
-              </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <People sx={{ mr: 1, color: 'primary.main' }} />
+              <Typography variant="h6">Total Users</Typography>
             </Box>
+            <Typography variant="h4" color="primary.main" fontWeight="bold">
+              {totalUsers}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Registered users in system
+            </Typography>
+          </CardContent>
+        </Card>
 
-            {/* Search */}
+        <Card sx={{ minWidth: 200, flex: '1 1 300px' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <School sx={{ mr: 1, color: 'success.main' }} />
+              <Typography variant="h6">Teachers</Typography>
+            </Box>
+            <Typography variant="h4" color="success.main" fontWeight="bold">
+              {users.filter(user => user.role === 'teacher').length}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Active teaching staff
+            </Typography>
+          </CardContent>
+        </Card>
+
+        <Card sx={{ minWidth: 200, flex: '1 1 300px' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <PersonAdd sx={{ mr: 1, color: 'info.main' }} />
+              <Typography variant="h6">Students</Typography>
+            </Box>
+            <Typography variant="h4" color="info.main" fontWeight="bold">
+              {users.filter(user => user.role === 'student').length}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Enrolled students
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
+
+      {/* Quick Actions */}
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Quick Actions
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<PersonAdd />}
+              onClick={() => router.push('/dashboard/principal/users/create')}
+            >
+              Add New User
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<School />}
+              onClick={() => router.push('/dashboard/principal/teachers')}
+            >
+              Manage Teachers
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<People />}
+              disabled
+            >
+              Manage Students (Coming Soon)
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Recent Users Table */}
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6">Recent Users</Typography>
             <TextField
-              fullWidth
-              placeholder="Search users by name, email, phone, or student ID..."
+              size="small"
+              placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{ mb: 3 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -313,78 +285,92 @@ export default function PrincipalDashboard() {
                   </InputAdornment>
                 ),
               }}
+              sx={{ minWidth: 250 }}
             />
+          </Box>
 
-            {/* Users Table */}
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
+          <TableContainer component={Paper} variant="outlined">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Phone</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Created</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
                   <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Phone</TableCell>
-                    <TableCell>Role</TableCell>
-                    <TableCell>Student ID</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Created</TableCell>
+                    <TableCell colSpan={6} align="center">
+                      Loading...
+                    </TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {users.map((user) => (
+                ) : users.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      No users found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  users.map((user) => (
                     <TableRow key={user._id} hover>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Avatar sx={{ mr: 2, width: 32, height: 32 }}>
-                            {user.firstName[0]}
-                          </Avatar>
-                          {user.firstName} {user.lastName}
-                        </Box>
+                        {user.firstName} {user.lastName}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.phone || '-'}</TableCell>
+                      <TableCell>{user.phone || 'N/A'}</TableCell>
                       <TableCell>
                         <Chip
                           label={user.role}
-                          color={getRoleColor(user.role) as any}
                           size="small"
+                          color={
+                            user.role === 'principal' ? 'error' :
+                            user.role === 'teacher' ? 'primary' :
+                            'default'
+                          }
                         />
                       </TableCell>
-                      <TableCell>{user.studentId || '-'}</TableCell>
                       <TableCell>
                         <Chip
                           label={user.isActive ? 'Active' : 'Inactive'}
-                          color={user.isActive ? 'success' : 'error'}
                           size="small"
+                          color={user.isActive ? 'success' : 'default'}
                         />
                       </TableCell>
                       <TableCell>
                         {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-            {/* Pagination */}
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={totalUsers}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </CardContent>
-        </Card>
-      </Container>
+          <TablePagination
+            component="div"
+            count={totalUsers}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25]}
+          />
+        </CardContent>
+      </Card>
 
       {/* Floating Action Button */}
       <Fab
         color="primary"
-        aria-label="add user"
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        aria-label="add"
+        sx={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+        }}
         onClick={() => router.push('/dashboard/principal/users/create')}
       >
         <Add />
