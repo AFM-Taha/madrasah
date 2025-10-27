@@ -36,6 +36,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
+  mounted: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,20 +49,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   // Check for existing token on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    setMounted(true);
+    
+    // Only access localStorage after component is mounted (client-side)
+    if (typeof window !== 'undefined') {
+      const savedToken = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
 
-    if (savedToken && savedUser) {
-      try {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user data:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+      if (savedToken && savedUser) {
+        try {
+          setToken(savedToken);
+          setUser(JSON.parse(savedUser));
+        } catch (error) {
+          console.error('Error parsing saved user data:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
       }
     }
     setLoading(false);
@@ -82,8 +89,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.ok) {
         setUser(data.user);
         setToken(data.token);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
         return { success: true };
       } else {
         return { success: false, error: data.error };
@@ -97,8 +106,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
   };
 
   const value: AuthContextType = {
@@ -108,6 +119,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     loading,
     isAuthenticated: !!user && !!token,
+    mounted,
   };
 
   return (

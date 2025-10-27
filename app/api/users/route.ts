@@ -14,12 +14,17 @@ export const GET = withPrincipalOnly(async (req) => {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search');
+    const classFilter = searchParams.get('class');
 
     // Build query
     let query: any = {};
     
     if (role && ['teacher', 'student'].includes(role)) {
       query.role = role;
+    }
+
+    if (classFilter && classFilter !== 'all') {
+      query.classId = classFilter;
     }
 
     if (search) {
@@ -38,6 +43,7 @@ export const GET = withPrincipalOnly(async (req) => {
     // Get users with pagination
     const users = await User.find(query)
       .select('-password')
+      .populate('classId', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -83,6 +89,8 @@ export const POST = withPrincipalOnly(async (req) => {
       grade,
       section,
       parentContact,
+      classId,
+      isActive,
     } = userData;
 
     // Validate required fields
@@ -144,6 +152,7 @@ export const POST = withPrincipalOnly(async (req) => {
       firstName,
       lastName,
       createdBy: req.user?.userId,
+      isActive: isActive !== undefined ? isActive : true,
     };
 
     // Add role-specific fields
@@ -154,6 +163,7 @@ export const POST = withPrincipalOnly(async (req) => {
       newUserData.grade = grade;
       newUserData.section = section;
       newUserData.parentContact = parentContact;
+      newUserData.classId = classId;
     }
 
     // Create user

@@ -19,6 +19,7 @@ export interface IUser extends Document {
   
   // Student specific fields
   studentId?: string;
+  classId?: mongoose.Types.ObjectId;
   grade?: string;
   section?: string;
   parentContact?: {
@@ -90,6 +91,10 @@ const UserSchema = new Schema<IUser>({
     unique: true,
     trim: true,
   },
+  classId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Class',
+  },
   grade: {
     type: String,
     trim: true,
@@ -109,11 +114,9 @@ const UserSchema = new Schema<IUser>({
   timestamps: true,
 });
 
-// Indexes for better performance
-UserSchema.index({ email: 1 });
-UserSchema.index({ phone: 1 });
+// Create indexes for better query performance (email, phone, studentId already have unique indexes)
 UserSchema.index({ role: 1 });
-UserSchema.index({ studentId: 1 });
+UserSchema.index({ classId: 1 });
 UserSchema.index({ isActive: 1 });
 
 // Virtual for full name

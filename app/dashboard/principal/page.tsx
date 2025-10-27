@@ -260,9 +260,9 @@ export default function PrincipalDashboard() {
             <Button
               variant="outlined"
               startIcon={<People />}
-              disabled
+              onClick={() => router.push('/dashboard/principal/students')}
             >
-              Manage Students (Coming Soon)
+              Manage Students
             </Button>
           </Box>
         </CardContent>

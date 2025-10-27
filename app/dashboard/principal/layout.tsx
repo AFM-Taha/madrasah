@@ -10,7 +10,7 @@ interface PrincipalLayoutProps {
 
 export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       <CssBaseline />
       
       {/* Sidebar */}
@@ -20,7 +20,7 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
+          marginLeft: '280px', // Account for fixed sidebar width
           backgroundColor: (theme) => theme.palette.grey[50],
           minHeight: '100vh',
           overflow: 'auto',

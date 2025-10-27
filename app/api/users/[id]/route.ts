@@ -9,9 +9,9 @@ export const GET = withPrincipalOnly(async (req, { params }) => {
   try {
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
 
-    const user = await User.findById(id).select('-password').lean();
+    const user = await User.findById(id).select('-password').populate('classId', 'name').lean();
 
     if (!user) {
       return NextResponse.json(
@@ -36,7 +36,7 @@ export const PUT = withPrincipalOnly(async (req, { params }) => {
   try {
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
     const updateData = await req.json();
 
     // Remove sensitive fields that shouldn't be updated directly
@@ -125,7 +125,7 @@ export const DELETE = withPrincipalOnly(async (req, { params }) => {
   try {
     await dbConnect();
 
-    const { id } = params;
+    const { id } = await params;
 
     // Check if user exists
     const user = await User.findById(id);

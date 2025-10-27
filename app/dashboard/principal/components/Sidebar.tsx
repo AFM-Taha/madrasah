@@ -51,8 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true }) => {
       text: 'Manage Students',
       icon: <StudentsIcon />,
       path: '/dashboard/principal/students',
-      active: pathname.startsWith('/dashboard/principal/students'),
-      disabled: true // Future feature
+      active: pathname.startsWith('/dashboard/principal/students')
     },
     {
       text: 'Settings',
@@ -79,7 +78,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true }) => {
   return (
     <Box
       sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
         width: open ? 280 : 0,
+        height: '100vh',
+        zIndex: 1200,
         flexShrink: 0,
         transition: theme.transitions.create('width', {
           easing: theme.transitions.easing.sharp,
